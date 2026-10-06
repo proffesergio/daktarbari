@@ -13,6 +13,7 @@ export type Doctor = {
   visiting_hours_bn: string;
   visiting_fee_approx: string;
   status: DoctorStatus;
+  photo_url?: string | null; // seed/external entries only; not a DB column
   upvotes: number;
   downvotes: number;
   reports: number;

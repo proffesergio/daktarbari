@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Stethoscope } from "lucide-react";
+import { Plus, Stethoscope, LayoutGrid } from "lucide-react";
 
 export default function Header() {
   return (
@@ -14,12 +14,20 @@ export default function Header() {
             <span className="block text-base text-gray-600">বাংলাদেশের ডাক্তার ডিরেক্টরি</span>
           </span>
         </Link>
-        <Link
-          href="/add"
-          className="touch-target flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-6 text-xl font-bold text-white hover:bg-emerald-800"
-        >
-          <Plus size={24} /> আপনার তথ্য যুক্ত করুন
-        </Link>
+        <nav className="flex flex-col gap-2 sm:flex-row sm:items-center" aria-label="প্রধান মেনু">
+          <Link
+            href="/all-doctors"
+            className="animate-menu-glow touch-target flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 px-6 text-xl font-bold text-white"
+          >
+            <LayoutGrid size={24} /> ✨ সকল ডাক্তার
+          </Link>
+          <Link
+            href="/add"
+            className="touch-target flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-6 text-xl font-bold text-white hover:bg-emerald-800"
+          >
+            <Plus size={24} /> আপনার তথ্য যুক্ত করুন
+          </Link>
+        </nav>
       </div>
     </header>
   );

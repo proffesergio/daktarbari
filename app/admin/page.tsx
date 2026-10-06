@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import AdminTable from "@/components/AdminTable";
+import AdminActions from "@/components/AdminActions";
 import LogoutButton from "@/components/LogoutButton";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,7 @@ export default async function AdminHome() {
       </div>
       <h2 className="mt-6 text-2xl font-bold">⏳ Pending অনুমোদন ({pendRows?.length ?? 0})</h2>
       <AdminTable rows={pendRows ?? []} />
+      <AdminActions />
       <h2 className="mt-6 text-2xl font-bold">📝 সাম্প্রতিক ভোট / রিপোর্ট</h2>
       {!votes?.length ? <p className="mt-2 text-lg">কোনো ভোট নেই।</p> : (
         <ul className="mt-2 flex flex-col gap-2">

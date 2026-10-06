@@ -36,6 +36,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Google Cloud service account keys — NEVER commit (use env vars instead)
+bornolab-*.json
+*service-account*.json
+service-account*.json
+*-key-*.json
+credentials.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

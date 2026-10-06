@@ -40,3 +40,28 @@ button, a, input, select, textarea {
   outline: 3px solid #0d6e5f;
   outline-offset: 2px;
 }
+
+/* Highlighted special menu: gentle glow pulse for 'All Doctors' */
+@keyframes menu-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55); }
+  50% { box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+}
+
+@keyframes menu-shine {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-menu-glow {
+  animation: menu-glow 2.2s ease-in-out infinite;
+  background-size: 200% 200%;
+  animation-name: menu-glow, menu-shine;
+  animation-duration: 2.2s, 6s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-menu-glow {
+    animation: none;
+  }
+}

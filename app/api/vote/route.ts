@@ -5,7 +5,7 @@ import { getSupabaseAdmin, getSupabasePublic } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
 
 const schema = z.object({
-  doctor_id: z.string().uuid("ভুল ডাক্তার ID"),
+  doctor_id: z.string().min(1, "ভুল ডাক্তার ID"),
   kind: z.enum(["up", "down", "report"]),
   reason: z.string().max(500).optional().default(""),
 });

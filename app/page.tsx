@@ -79,6 +79,9 @@ export default function Home() {
           <RotateCcw size={22} /> নতুন করে
         </button>
       </div>
+      <Link href="/all-doctors" className="animate-menu-glow touch-target mt-4 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 px-6 text-2xl font-bold text-white">
+        ✨ সকল ডাক্তার — ক্যাটাগরি অনুযায়ী দেখুন
+      </Link>
     </div>
   );
 }

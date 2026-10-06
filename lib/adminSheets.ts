@@ -17,13 +17,13 @@ export async function syncSheetStatus(id: string, status: string): Promise<void>
       });
     }
     if (status === "APPROVED" && idx >= 0) {
-      const row = await sheets.spreadsheets.values.get({ spreadsheetId: sid, range: `${SHEET_TABS.pending}!A${idx + 1}:M${idx + 1}` });
+      const row = await sheets.spreadsheets.values.get({ spreadsheetId: sid, range: `${SHEET_TABS.pending}!A${idx + 1}:N${idx + 1}` });
       const vals = row.data.values?.[0];
       if (vals) {
         vals[11] = "APPROVED";
         await sheets.spreadsheets.values.append({
           spreadsheetId: sid,
-          range: `${SHEET_TABS.approved}!A:M`,
+          range: `${SHEET_TABS.approved}!A:N`,
           valueInputOption: "RAW",
           requestBody: { values: [vals] },
         });

@@ -19,7 +19,7 @@ export const SHEET_TABS = {
   reports: "Reports",
 } as const;
 
-// Column order MUST match supabase/schema.sql field order
+// Column order: A=id … M=created_at, N=photo_url
 export const SHEET_HEADERS = [
   "id",
   "name_bn",
@@ -34,4 +34,5 @@ export const SHEET_HEADERS = [
   "visiting_fee_approx",
   "status",
   "created_at",
+  "photo_url",
 ] as const;
