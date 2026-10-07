@@ -1,8 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { PhoneCall, MapPin, Clock, BadgeCheck } from "lucide-react";
+import { PhoneCall, MapPin, Clock, BadgeCheck, ShieldCheck } from "lucide-react";
 import VoteButtons from "@/components/VoteButtons";
-import PhoneVerify from "@/components/PhoneVerify";
+import VerifyPanel from "@/components/VerifyPanel";
 import DoctorPhoto from "@/components/DoctorPhoto";
 import { getSupabasePublic, getSupabaseAdmin } from "@/lib/supabase";
 import { findSeed } from "@/lib/seed-doctors";
@@ -23,7 +23,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 async function getDoctor(id: string): Promise<Doctor | null> {
   const external = id.startsWith("seed-") || id.startsWith("qimp-");
-  // DB-first so admin edits / Sheet syncs show instantly; local seed as fallback.
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     try {
       const sb = getSupabaseAdmin();
@@ -54,8 +53,8 @@ export default async function DoctorDetail({ params }: { params: Promise<{ id: s
   if (!d) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-10 text-center">
-        <p className="text-2xl font-bold">ডাক্তারের তথ্য পাওয়া যায়নি</p>
-        <Link href="/" className="mt-4 inline-block text-xl font-bold text-emerald-800">← মূল পাতায় ফিরুন</Link>
+        <p className="text-xl font-bold">ডাক্তারের তথ্য পাওয়া যায়নি</p>
+        <Link href="/" className="mt-4 inline-block text-sm font-bold text-emerald-800">← মূল পাতায় ফিরুন</Link>
       </div>
     );
   }
@@ -64,47 +63,58 @@ export default async function DoctorDetail({ params }: { params: Promise<{ id: s
   const isQimp = id.startsWith("qimp-");
   const isBdd = id.startsWith("bd-");
   const isExternal = isSeed || isQimp || isBdd;
+  const hasPhone = !!d.appointment_contact && /^01[3-9]\d{8}$/.test(d.appointment_contact.replace(/[\s\-()]/g, ""));
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
-      <Link href="/" className="text-xl font-bold text-emerald-800">← ফিরে যান</Link>
-      {isExternal && (
-        <p className="mt-3 rounded-xl bg-amber-50 p-4 text-lg font-semibold">
-          ⏳ Verifying — ফোনে নিশ্চিত না হয়ে সিরিয়াল দেবেন না।
-        </p>
-      )}
-      <div className="mt-2 flex items-center gap-4">
-        <DoctorPhoto doctor={d} size={112} />
-        <div>
-          <h1 className="text-4xl font-bold">{d.name_bn}</h1>
-          {d.name_en && d.name_en !== d.name_bn && <p className="text-xl text-gray-600">{d.name_en}</p>}
+    <div className="mx-auto max-w-3xl px-3 py-5 pb-24 sm:pb-8">
+      <Link href="/" className="text-sm font-bold text-emerald-800">← ফিরে যান</Link>
+      <div className="mt-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <DoctorPhoto doctor={d} size={72} />
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-bold">{d.name_bn}</h1>
+            {d.name_en && d.name_en !== d.name_bn && <p className="truncate text-sm text-gray-500">{d.name_en}</p>}
+            <p className="mt-0.5 text-sm font-semibold text-emerald-700">Expertised in {d.specialty_bn}</p>
+          </div>
         </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {d.bmdc_reg_no ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
+              <BadgeCheck size={14} /> BMDC: {d.bmdc_reg_no}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">
+              <ShieldCheck size={14} /> BMDC যাচাই বাকি — Verify করুন
+            </span>
+          )}
+          {isExternal && (
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+              কমিউনিটি সংযোজন — নিশ্চিত করে ব্যবহার করুন
+            </span>
+          )}
+        </div>
+        <div className="mt-3 rounded-xl bg-gray-50 p-3 text-sm">
+          <p className="flex gap-1.5"><MapPin size={16} className="mt-0.5 shrink-0 text-gray-500" />{d.chamber_address_bn}, {d.location_upazila_area}, {d.location_district}</p>
+          <p className="mt-1.5 flex gap-1.5"><Clock size={16} className="mt-0.5 shrink-0 text-gray-500" />{d.visiting_hours_bn}</p>
+          <p className="mt-1.5 font-bold">ভিজিট ফি: {d.visiting_fee_approx}</p>
+        </div>
+        {hasPhone ? (
+          <>
+            <a href={`tel:${d.appointment_contact}`} className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800">
+              <PhoneCall size={18} /> ফোন করুন: {d.appointment_contact}
+            </a>
+            <p className="mt-2 text-center text-xs text-gray-500">সিরিয়ালের জন্য উপরের বাটনে চাপ দিন</p>
+          </>
+        ) : (
+          <p className="mt-3 rounded-xl bg-gray-100 p-3 text-center text-sm font-bold text-gray-600">
+            সিরিয়াল নম্বর যাচাই চলছে — নিচে সঠিক নম্বর থাকলে পাঠান
+          </p>
+        )}
+        <div id="verify">
+          <VerifyPanel doctorId={d.id} />
+        </div>
+        {!isExternal && <VoteButtons doctorId={d.id} up={d.upvotes} down={d.downvotes} reports={d.reports} />}
       </div>
-      <p className="mt-1 text-2xl font-semibold text-emerald-800">{d.specialty_bn}</p>
-      {d.bmdc_reg_no && (
-        <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-lg font-bold text-emerald-800">
-          <BadgeCheck size={22} /> BMDC: {d.bmdc_reg_no} (যাচাইকৃত)
-        </p>
-      )}
-      <div className="mt-4 rounded-2xl border-2 p-5 text-xl">
-        <p className="flex gap-2"><MapPin size={24} className="mt-1 shrink-0" />{d.chamber_address_bn}, {d.location_upazila_area}, {d.location_district}</p>
-        <p className="mt-2 flex gap-2"><Clock size={24} className="mt-1 shrink-0" />{d.visiting_hours_bn}</p>
-        <p className="mt-2 font-bold">ভিজিট ফি: {d.visiting_fee_approx}</p>
-      </div>
-      {d.appointment_contact && !d.appointment_contact.includes("যাচাই") ? (
-        <>
-          <a href={`tel:${d.appointment_contact}`} className="touch-target mt-5 flex items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-6 text-2xl font-bold text-white">
-            <PhoneCall size={28} /> ফোন করুন: {d.appointment_contact}
-          </a>
-          <p className="mt-3 text-center text-lg text-gray-500">সিরিয়ালের জন্য উপরের বাটনে চাপ দিন</p>
-        </>
-      ) : (
-        <p className="mt-5 rounded-2xl bg-gray-100 p-5 text-center text-xl font-bold text-gray-600">
-          সিরিয়াল নম্বর Verifying — অ্যাডমিন ফোনে নিশ্চিত করে প্রকাশ করবেন
-        </p>
-      )}
-      <PhoneVerify doctorId={d.id} currentPhone={d.appointment_contact} />
-      {!isExternal && <VoteButtons doctorId={d.id} up={d.upvotes} down={d.downvotes} reports={d.reports} />}
     </div>
   );
 }

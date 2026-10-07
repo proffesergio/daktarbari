@@ -6,12 +6,14 @@ export type Doctor = {
   name_en: string | null;
   specialty_bn: string;
   bmdc_reg_no: string | null;
+  location_division?: string | null;
   location_district: string;
   location_upazila_area: string;
   chamber_address_bn: string;
   appointment_contact: string;
   visiting_hours_bn: string;
   visiting_fee_approx: string;
+  fee_min?: number | null;
   status: DoctorStatus;
   photo_url?: string | null; // seed/external entries only; not a DB column
   upvotes: number;
@@ -19,3 +21,5 @@ export type Doctor = {
   reports: number;
   created_at: string;
 };
+
+export type VerifyTarget = "phone" | "chamber" | "fee" | "hours" | "bmdc" | "general";

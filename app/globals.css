@@ -14,7 +14,7 @@
 }
 
 html {
-  font-size: 18px; /* elder-friendly base */
+  font-size: 16px; /* compact modern base */
 }
 
 body {
@@ -61,7 +61,54 @@ button, a, input, select, textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-menu-glow {
-    animation: none;
+  .animate-menu-glow,
+  .animate-step-in,
+  .animate-fade-up,
+  .animate-progress-shimmer {
+    animation: none !important;
   }
+}
+
+/* Modern multistep animations */
+@keyframes step-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-step-in {
+  animation: step-in 0.35s cubic-bezier(0.21, 1.02, 0.73, 1) both;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 0.25s ease-out both;
+}
+
+@keyframes progress-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-progress-shimmer {
+  background-size: 200% 100%;
+  animation: progress-shimmer 1.8s linear infinite;
+}
+
+/* Drawer + bottom nav */
+@keyframes drawer-in {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.animate-drawer-in {
+  animation: drawer-in 0.28s cubic-bezier(0.21, 1.02, 0.73, 1) both;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Compact chips */
+.chip-active {
+  transform: translateY(-1px);
 }

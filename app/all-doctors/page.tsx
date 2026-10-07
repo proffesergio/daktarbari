@@ -2,17 +2,18 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import DoctorCard from "@/components/DoctorCard";
 import { getSupabasePublic } from "@/lib/supabase";
-import { filterSeed } from "@/lib/seed-doctors";
-import { filterQimp } from "@/lib/seed-qimp14";
+import { SEED_DOCTORS } from "@/lib/seed-doctors";
+import { QIMP_DOCTORS } from "@/lib/seed-qimp14";
 import { filterBdd } from "@/lib/seed-bddoctor";
 import { SPECIALTIES_BN } from "@/lib/specialties";
+import { applySearch } from "@/lib/search";
 import type { Doctor } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "সকল ডাক্তার — ক্যাটাগরি অনুযায়ী | ডাক্তার বাড়ি",
-  description: "বিশেষজ্ঞ ক্যাটাগরি অনুযায়ী সব ডাক্তার এক জায়গায়।",
+  description: "বিশেষজ্ঞ ক্যাটাগরি অনুযায়ী সব ডাক্তার এক জায়গায়। নাম দিয়ে খুঁজুন।",
 };
 
 async function getDbDoctors(): Promise<Doctor[]> {
@@ -26,15 +27,18 @@ async function getDbDoctors(): Promise<Doctor[]> {
   }
 }
 
-export default async function AllDoctorsPage() {
+type SP = { q?: string; specialty?: string };
+
+export default async function AllDoctorsPage({ searchParams }: { searchParams: Promise<SP> }) {
+  const f = await searchParams;
   const db = await getDbDoctors();
-  // Seeds carry photos via filter helpers; DB rows win on same id (after admin seed/sync).
   const dbIds = new Set(db.map((d) => d.id));
   const dbBmdc = new Set(db.flatMap((d) => (d.bmdc_reg_no ? [d.bmdc_reg_no] : [])));
-  const seeds = [...filterSeed({}), ...filterQimp({}), ...filterBdd({})].filter(
+  const seeds = [...SEED_DOCTORS, ...QIMP_DOCTORS, ...filterBdd({})].filter(
     (s) => !dbIds.has(s.id) && !(s.bmdc_reg_no && dbBmdc.has(s.bmdc_reg_no)),
   );
-  const all = [...db, ...seeds];
+  const allRaw = [...db, ...seeds];
+  const all = applySearch(allRaw, { q: f.q, specialty: f.specialty });
 
   const order = [...SPECIALTIES_BN];
   const groups = new Map<string, Doctor[]>();
@@ -49,28 +53,44 @@ export default async function AllDoctorsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6">
-      <h1 className="text-3xl font-bold">✨ সকল ডাক্তার</h1>
-      <p className="mt-1 text-lg text-gray-600">{all.length} জন ({db.length} যাচাইকৃত + {seeds.length} Verifying)</p>
-      <nav className="mt-4 flex flex-wrap gap-2" aria-label="ক্যাটাগরি">
+    <div className="mx-auto max-w-5xl px-3 py-5 pb-24 sm:pb-8">
+      <h1 className="text-lg font-bold">✨ সকল ডাক্তার</h1>
+      <p className="mt-0.5 text-sm text-gray-600">{all.length} জন ({db.length} লাইভ + {seeds.length} কমিউনিটি)</p>
+
+      <form action="/all-doctors" className="mt-3 flex gap-1.5">
+        <input name="q" defaultValue={f.q ?? ""} placeholder="নাম / হাসপাতাল দিয়ে খুঁজুন..." className="min-w-0 flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-600" />
+        {f.specialty && <input type="hidden" name="specialty" value={f.specialty} />}
+        <button className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white">খুঁজুন</button>
+      </form>
+      {(f.q || f.specialty) && (
+        <Link href="/all-doctors" className="mt-2 inline-block text-xs font-bold text-emerald-700">✕ ফিল্টার মুছুন</Link>
+      )}
+
+      <nav className="mt-3 flex flex-wrap gap-1.5" aria-label="ক্যাটাগরি">
         {cats.map((c, i) => (
-          <a key={c} href={`#cat-${i}`} className="touch-target rounded-full border-2 border-emerald-700 px-4 py-2 text-lg font-bold text-emerald-800">
+          <a key={c} href={`#cat-${i}`} className="rounded-full border border-emerald-700 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50">
             {c} ({groups.get(c)!.length})
           </a>
         ))}
       </nav>
       {cats.map((c, i) => (
-        <section key={c} id={`cat-${i}`} className="mt-8 scroll-mt-24">
-          <h2 className="rounded-xl bg-emerald-50 px-4 py-3 text-2xl font-bold text-emerald-900">
-            {c} — {groups.get(c)!.length} জন
+        <section key={c} id={`cat-${i}`} className="mt-6 scroll-mt-24">
+          <h2 className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-900">
+            Expertised in {c} — {groups.get(c)!.length} জন
           </h2>
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {groups.get(c)!.map((d) => <DoctorCard key={d.id} doctor={d} variant="grid" />)}
+          <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {groups.get(c)!.slice(0, 24).map((d) => <DoctorCard key={d.id} doctor={d} variant="grid" />)}
           </div>
+          {groups.get(c)!.length > 24 && (
+            <Link href={`/doctors?specialty=${encodeURIComponent(c)}`} className="mt-2 block rounded-xl border border-gray-200 bg-white px-3 py-2 text-center text-xs font-bold text-emerald-800">
+              আরও {groups.get(c)!.length - 24} জন দেখুন →
+            </Link>
+          )}
         </section>
       ))}
-      <div className="mt-8 text-center">
-        <Link href="/add" className="touch-target inline-flex items-center justify-center rounded-xl bg-emerald-700 px-6 text-xl font-bold text-white">
+      {cats.length === 0 && <p className="mt-6 rounded-xl border border-dashed p-6 text-center text-sm text-gray-500">কিছু মেলেনি — অন্য নামে খুঁজুন।</p>}
+      <div className="mt-6 text-center">
+        <Link href="/add" className="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white">
           + আপনার তথ্য যুক্ত করুন
         </Link>
       </div>

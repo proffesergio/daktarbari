@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Hind_Siliguri, Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
+import BottomNav from "@/components/BottomNav";
 
 const hindSiliguri = Hind_Siliguri({
   variable: "--font-hind",
@@ -25,12 +26,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="bn" className={`${hindSiliguri.variable} ${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-white text-gray-900">
+      <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
         <Header />
         <main className="flex-1">{children}</main>
-        <footer className="border-t px-4 py-6 text-center text-lg text-gray-600">
+        <footer className="border-t bg-white px-4 py-6 pb-24 text-center text-sm text-gray-500 md:pb-6">
           ডাক্তার বাড়ি — তথ্য যাচাই করে ব্যবহার করুন | জরুরিতে ৯৯৯
         </footer>
+        <BottomNav />
       </body>
     </html>
   );

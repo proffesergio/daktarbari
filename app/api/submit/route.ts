@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { doctorSubmitSchema } from "@/lib/validation";
 import { getSupabaseAdmin, getSupabasePublic } from "@/lib/supabase";
 import { getSheetsClient, SHEET_TABS } from "@/lib/sheets";
+import { findDivisionByDistrict } from "@/lib/divisions";
+import { parseFeeMin } from "@/lib/fees";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +22,27 @@ export async function POST(req: Request) {
   const v = parsed.data;
   const id = crypto.randomUUID();
   const created_at = new Date().toISOString();
-  const row = { id, name_bn: v.name_bn, name_en: v.name_en || null, specialty_bn: v.specialty_bn, bmdc_reg_no: v.bmdc_reg_no || null, location_district: v.location_district, location_upazila_area: v.location_upazila_area, chamber_address_bn: v.chamber_address_bn, appointment_contact: v.appointment_contact, visiting_hours_bn: v.visiting_hours_bn, visiting_fee_approx: v.visiting_fee_approx, status: "PENDING" as const, created_at };
+  const fullRow = {
+    id,
+    name_bn: v.name_bn,
+    name_en: v.name_en || null,
+    specialty_bn: v.specialty_bn,
+    bmdc_reg_no: v.bmdc_reg_no || null,
+    location_division: v.location_division || findDivisionByDistrict(v.location_district),
+    location_district: v.location_district,
+    location_upazila_area: v.location_upazila_area,
+    chamber_address_bn: v.chamber_address_bn,
+    appointment_contact: v.appointment_contact,
+    visiting_hours_bn: v.visiting_hours_bn,
+    visiting_fee_approx: v.visiting_fee_approx,
+    fee_min: parseFeeMin(v.visiting_fee_approx),
+    status: "PENDING" as const,
+    created_at,
+  };
+  // Legacy row without new columns (pre-migration DBs)
+  const { location_division: _div, fee_min: _fee, ...row } = fullRow;
+  void _div;
+  void _fee;
 
   // SHEET-FIRST: data lands in the Sheet first, then the DB cache.
   // 1) Google Sheet Pending append (best-effort, never blocks)
@@ -46,7 +68,11 @@ export async function POST(req: Request) {
   }
   try {
     const sb = process.env.SUPABASE_SERVICE_ROLE_KEY ? getSupabaseAdmin() : getSupabasePublic();
-    const { error } = await sb.from("doctors").insert(row);
+    let { error } = await sb.from("doctors").insert(fullRow);
+    if (error && /column|location_division|fee_min/i.test(error.message)) {
+      const retry = await sb.from("doctors").insert(row);
+      error = retry.error;
+    }
     if (error) throw error;
   } catch {
     return NextResponse.json({ error: "ডাটাবেজে সংরক্ষণ ব্যর্থ" }, { status: 500 });

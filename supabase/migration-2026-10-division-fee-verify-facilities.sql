@@ -1,11 +1,10 @@
--- daktarbari schema — run in Supabase SQL editor (fresh install).
--- IDs are TEXT so local seeds (seed-01, qimp-01) and app UUIDs share one key
--- space — upsert on id never duplicates. photo_url stores /doctors/... path.
--- If you already ran the old uuid schema with no real data yet, drop first:
---   drop table if exists doctor_votes; drop table if exists doctors;
+-- Migration: division + fee_min for sophisticated search + universal verification
+-- SAFE to run before OR after schema.sql (creates base tables if missing).
+-- Fresh install? Just run supabase/schema.sql (already includes everything below).
 
 create extension if not exists "pgcrypto";
 
+-- Ensure base table exists (fixes 42P01: relation "doctors" does not exist)
 create table if not exists doctors (
   id text primary key default (gen_random_uuid()::text),
   name_bn text not null,
@@ -28,50 +27,14 @@ create table if not exists doctors (
   created_at timestamptz not null default now()
 );
 
-create index if not exists idx_doctors_status on doctors(status);
+alter table doctors add column if not exists location_division text default '';
+alter table doctors add column if not exists fee_min int;
+
 create index if not exists idx_doctors_division on doctors(location_division);
-create index if not exists idx_doctors_district on doctors(location_district);
-create index if not exists idx_doctors_area on doctors(location_upazila_area);
-create index if not exists idx_doctors_specialty on doctors(specialty_bn);
 create index if not exists idx_doctors_fee on doctors(fee_min);
 
--- Public read: APPROVED only
-alter table doctors enable row level security;
-drop policy if exists "public read approved" on doctors;
-create policy "public read approved" on doctors
-  for select using (status = 'APPROVED');
-
--- Votes log for transparency (one row per vote/report)
-create table if not exists doctor_votes (
-  id uuid primary key default gen_random_uuid(),
-  doctor_id text not null,
-  kind text not null check (kind in ('up','down','report')),
-  reason text,
-  created_at timestamptz not null default now()
-);
-alter table doctor_votes enable row level security;
-drop policy if exists "anyone can insert vote" on doctor_votes;
-create policy "anyone can insert vote" on doctor_votes for insert with check (true);
-drop policy if exists "public read votes" on doctor_votes;
-create policy "public read votes" on doctor_votes for select using (true);
-
--- Community phone verification: anyone confirms the number or suggests a fix.
--- doctor_id is TEXT so seed/qimp ids work before they are approved.
-create table if not exists phone_verifications (
-  id uuid primary key default gen_random_uuid(),
-  doctor_id text not null,
-  action text not null check (action in ('confirm','correct')),
-  phone text not null default '',
-  created_at timestamptz not null default now()
-);
-create index if not exists idx_phone_verif_doctor on phone_verifications(doctor_id);
-alter table phone_verifications enable row level security;
-drop policy if exists "anyone can insert verification" on phone_verifications;
-create policy "anyone can insert verification" on phone_verifications for insert with check (true);
-drop policy if exists "public read verifications" on phone_verifications;
-create policy "public read verifications" on phone_verifications for select using (true);
-
 -- Universal verification: phone/chamber/fee/hours/bmdc/general
+-- doctor_id is TEXT so seed ids work pre-approval.
 create table if not exists doctor_verifications (
   id uuid primary key default gen_random_uuid(),
   doctor_id text not null,
@@ -88,7 +51,7 @@ create policy "anyone can insert doctor verification" on doctor_verifications fo
 drop policy if exists "public read doctor verifications" on doctor_verifications;
 create policy "public read doctor verifications" on doctor_verifications for select using (true);
 
--- Facilities: hospitals + diagnostics (admin-managed via service_role, public read)
+-- Facilities: hospitals + diagnostics (admin-managed, public read)
 create table if not exists facilities (
   id text primary key,
   kind text not null check (kind in ('hospital','diagnostic')),
