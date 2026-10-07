@@ -1,15 +1,9 @@
+import { Stethoscope } from "lucide-react";
 import type { Doctor } from "@/lib/types";
 
-function initials(name: string): string {
-  const parts = name.replace(/^(Prof\.|Dr\.|Professor|Associate|Assistant)\.?/i, "").trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "ডা";
-}
-
-// Round profile photo with initials fallback (seed photos hotlinked for now).
+// Round photo with logo-stethoscope fallback (no empty/initials tile).
 export default function DoctorPhoto({ doctor, size = 80 }: { doctor: Doctor; size?: number }) {
   if (doctor.photo_url) {
-    // Plain <img> is deliberate: seed photos are hotlinked and will move to
-    // /public later; next/image remote optimization is not worth it yet.
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -26,11 +20,13 @@ export default function DoctorPhoto({ doctor, size = 80 }: { doctor: Doctor; siz
   }
   return (
     <span
-      aria-hidden
-      className="flex shrink-0 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-800"
-      style={{ width: size, height: size, fontSize: size * 0.35 }}
+      role="img"
+      aria-label={`${doctor.name_bn} — ডাক্তার`}
+      title={doctor.name_bn}
+      className="flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-sm"
+      style={{ width: size, height: size }}
     >
-      {initials(doctor.name_en ?? doctor.name_bn)}
+      <Stethoscope size={Math.round(size * 0.45)} strokeWidth={2.2} />
     </span>
   );
 }

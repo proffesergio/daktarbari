@@ -5,6 +5,7 @@ import { getSupabasePublic } from "@/lib/supabase";
 import { SEED_DOCTORS } from "@/lib/seed-doctors";
 import { QIMP_DOCTORS } from "@/lib/seed-qimp14";
 import { filterBdd } from "@/lib/seed-bddoctor";
+import { BANCHARAMPUR_DOCTORS } from "@/lib/seed-bancharampur";
 import { applySearch, type SearchFilters } from "@/lib/search";
 import { FEE_RANGES } from "@/lib/fees";
 import type { Doctor } from "@/lib/types";
@@ -88,7 +89,7 @@ export default async function DoctorsPage({ searchParams }: { searchParams: Prom
 
   const dbIds = new Set(db.map((d) => d.id));
   const dbBmdc = new Set(db.flatMap((d) => (d.bmdc_reg_no ? [d.bmdc_reg_no] : [])));
-  const seedsRaw = [...SEED_DOCTORS, ...QIMP_DOCTORS, ...filterBdd({})].filter(
+  const seedsRaw = [...SEED_DOCTORS, ...QIMP_DOCTORS, ...BANCHARAMPUR_DOCTORS, ...filterBdd({})].filter(
     (s) => !dbIds.has(s.id) && !(s.bmdc_reg_no && dbBmdc.has(s.bmdc_reg_no)),
   );
 
@@ -110,14 +111,14 @@ export default async function DoctorsPage({ searchParams }: { searchParams: Prom
       </p>
 
       {/* Fee + sort bar */}
-      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         {FEE_RANGES.map((r) => {
           const active = (f.fee ?? "all") === r.value;
           return (
             <Link
               key={r.value}
               href={withFeeLink(f, r.value)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
+              className={`flex min-h-[44px] items-center rounded-full border p-3 text-xs font-bold leading-tight ${
                 active
                   ? "border-emerald-700 bg-emerald-700 text-white"
                   : "border-gray-200 bg-white text-gray-700"
@@ -130,7 +131,7 @@ export default async function DoctorsPage({ searchParams }: { searchParams: Prom
         <span className="mx-1 h-4 w-px bg-gray-200" />
         <Link
           href={withSortLink(f, "smart")}
-          className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
+          className={`flex min-h-[44px] items-center rounded-full border p-3 text-xs font-bold leading-tight ${
             (f.sort ?? "smart") === "smart"
               ? "border-emerald-700 bg-emerald-50 text-emerald-800"
               : "border-gray-200 bg-white text-gray-700"
@@ -140,7 +141,7 @@ export default async function DoctorsPage({ searchParams }: { searchParams: Prom
         </Link>
         <Link
           href={withSortLink(f, "fee_asc")}
-          className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
+          className={`flex min-h-[44px] items-center rounded-full border p-3 text-xs font-bold leading-tight ${
             f.sort === "fee_asc"
               ? "border-emerald-700 bg-emerald-50 text-emerald-800"
               : "border-gray-200 bg-white text-gray-700"

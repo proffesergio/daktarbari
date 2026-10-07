@@ -101,6 +101,7 @@ export const FACILITIES: Facility[] = [
   f("h-71", "hospital", "Community Based Medical College Hospital", "কমিউনিটি বেজড মেডিকেল কলেজ হাসপাতাল", "ময়মনসিংহ", "ময়মনসিংহ", "সদর", "উইনারপাড়", "091-54344"),
   f("d-70", "diagnostic", "Popular Diagnostic Mymensingh", "পপুলার ডায়াগনস্টিক ময়মনসিংহ", "ময়মনসিংহ", "ময়মনসিংহ", "চরপাড়া", "৩১/এ চরপাড়া রোড", "09613-787801"),
   f("h-72", "hospital", "Jamalpur General Hospital", "জামালপুর জেনারেল হাসপাতাল", "ময়মনসিংহ", "জামালপুর", "সদর", "হাসপাতাল রোড", ""),
+  f("h-80", "hospital", "Bancharampur Upazila Health Complex", "বাঞ্ছারামপুর উপজেলা স্বাস্থ্য কমপ্লেক্স", "চট্টগ্রাম", "ব্রাহ্মণবাড়িয়া", "বাঞ্ছারামপুর", "স্বাস্থ্য কমপ্লেক্স রোড, বাঞ্ছারামপুর", ""),
 ];
 
 export function filterFacilities(f: {

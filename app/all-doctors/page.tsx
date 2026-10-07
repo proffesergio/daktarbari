@@ -5,6 +5,7 @@ import { getSupabasePublic } from "@/lib/supabase";
 import { SEED_DOCTORS } from "@/lib/seed-doctors";
 import { QIMP_DOCTORS } from "@/lib/seed-qimp14";
 import { filterBdd } from "@/lib/seed-bddoctor";
+import { BANCHARAMPUR_DOCTORS } from "@/lib/seed-bancharampur";
 import { SPECIALTIES_BN } from "@/lib/specialties";
 import { applySearch } from "@/lib/search";
 import type { Doctor } from "@/lib/types";
@@ -34,7 +35,7 @@ export default async function AllDoctorsPage({ searchParams }: { searchParams: P
   const db = await getDbDoctors();
   const dbIds = new Set(db.map((d) => d.id));
   const dbBmdc = new Set(db.flatMap((d) => (d.bmdc_reg_no ? [d.bmdc_reg_no] : [])));
-  const seeds = [...SEED_DOCTORS, ...QIMP_DOCTORS, ...filterBdd({})].filter(
+  const seeds = [...SEED_DOCTORS, ...QIMP_DOCTORS, ...BANCHARAMPUR_DOCTORS, ...filterBdd({})].filter(
     (s) => !dbIds.has(s.id) && !(s.bmdc_reg_no && dbBmdc.has(s.bmdc_reg_no)),
   );
   const allRaw = [...db, ...seeds];
@@ -66,10 +67,10 @@ export default async function AllDoctorsPage({ searchParams }: { searchParams: P
         <Link href="/all-doctors" className="mt-2 inline-block text-xs font-bold text-emerald-700">✕ ফিল্টার মুছুন</Link>
       )}
 
-      <nav className="mt-3 flex flex-wrap gap-1.5" aria-label="ক্যাটাগরি">
+      <nav className="mt-3 flex flex-wrap gap-2" aria-label="ক্যাটাগরি">
         {cats.map((c, i) => (
-          <a key={c} href={`#cat-${i}`} className="rounded-full border border-emerald-700 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50">
-            {c} ({groups.get(c)!.length})
+          <a key={c} href={`#cat-${i}`} className="flex min-h-[44px] items-center rounded-full border border-emerald-700 p-3 text-xs font-bold leading-tight text-emerald-800 hover:bg-emerald-50">
+            <span className="truncate">{c} ({groups.get(c)!.length})</span>
           </a>
         ))}
       </nav>

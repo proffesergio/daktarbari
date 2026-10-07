@@ -3,6 +3,8 @@ import { Hind_Siliguri, Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
+import LoadingBar from "@/components/LoadingBar";
+import { Suspense } from "react";
 
 const hindSiliguri = Hind_Siliguri({
   variable: "--font-hind",
@@ -27,6 +29,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="bn" className={`${hindSiliguri.variable} ${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
+        <Suspense fallback={null}>
+          <LoadingBar />
+        </Suspense>
         <Header />
         <main className="flex-1">{children}</main>
         <footer className="border-t bg-white px-4 py-6 pb-24 text-center text-sm text-gray-500 md:pb-6">

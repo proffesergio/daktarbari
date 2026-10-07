@@ -8,6 +8,7 @@ import { getSupabasePublic, getSupabaseAdmin } from "@/lib/supabase";
 import { findSeed } from "@/lib/seed-doctors";
 import { findQimp } from "@/lib/seed-qimp14";
 import { findBdd } from "@/lib/seed-bddoctor";
+import { findBancharampur } from "@/lib/seed-bancharampur";
 import type { Doctor } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,7 @@ async function getDoctor(id: string): Promise<Doctor | null> {
   if (id.startsWith("seed-")) return findSeed(id) ?? null;
   if (id.startsWith("qimp-")) return findQimp(id) ?? null;
   if (id.startsWith("bd-")) return findBdd(id) ?? null;
+  if (id.startsWith("bnc-")) return findBancharampur(id) ?? null;
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
   try {
     const sb = getSupabasePublic();
@@ -62,7 +64,8 @@ export default async function DoctorDetail({ params }: { params: Promise<{ id: s
   const isSeed = id.startsWith("seed-");
   const isQimp = id.startsWith("qimp-");
   const isBdd = id.startsWith("bd-");
-  const isExternal = isSeed || isQimp || isBdd;
+  const isBnc = id.startsWith("bnc-");
+  const isExternal = isSeed || isQimp || isBdd || isBnc;
   const hasPhone = !!d.appointment_contact && /^01[3-9]\d{8}$/.test(d.appointment_contact.replace(/[\s\-()]/g, ""));
 
   return (
