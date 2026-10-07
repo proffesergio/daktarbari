@@ -53,6 +53,12 @@ export default async function AllDoctorsPage({ searchParams }: { searchParams: P
     return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
   });
 
+  const fromParams = new URLSearchParams();
+  if (f.q) fromParams.set("q", f.q);
+  if (f.specialty) fromParams.set("specialty", f.specialty);
+  const fromQs = fromParams.toString();
+  const fromUrl = `/all-doctors${fromQs ? `?${fromQs}` : ""}`;
+
   return (
     <div className="mx-auto max-w-5xl px-3 py-5 pb-24 sm:pb-8">
       <h1 className="text-lg font-bold">✨ সকল ডাক্তার</h1>
@@ -80,7 +86,7 @@ export default async function AllDoctorsPage({ searchParams }: { searchParams: P
             Expertised in {c} — {groups.get(c)!.length} জন
           </h2>
           <div className="mt-2.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            {groups.get(c)!.slice(0, 24).map((d) => <DoctorCard key={d.id} doctor={d} variant="grid" />)}
+            {groups.get(c)!.slice(0, 24).map((d) => <DoctorCard key={d.id} doctor={d} variant="grid" from={fromUrl} />)}
           </div>
           {groups.get(c)!.length > 24 && (
             <Link href={`/doctors?specialty=${encodeURIComponent(c)}`} className="mt-2 block rounded-xl border border-gray-200 bg-white px-3 py-2 text-center text-xs font-bold text-emerald-800">

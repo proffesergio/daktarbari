@@ -102,16 +102,30 @@ export default async function DoctorsPage({ searchParams }: { searchParams: Prom
       .filter(Boolean)
       .join(" • ") || "সকল ডাক্তার";
 
+  // Carry the full results URL into profile links so Back returns here
+  const fromParams = new URLSearchParams();
+  if (f.division) fromParams.set("division", f.division);
+  if (f.district) fromParams.set("district", f.district);
+  if (f.area) fromParams.set("area", f.area);
+  if (f.specialty) fromParams.set("specialty", f.specialty);
+  if (f.q) fromParams.set("q", f.q);
+  if (f.fee) fromParams.set("fee", f.fee);
+  if (f.sort) fromParams.set("sort", f.sort);
+  const fromQs = fromParams.toString();
+  const fromUrl = `/doctors${fromQs ? `?${fromQs}` : ""}`;
+
   return (
     <div className="mx-auto max-w-3xl px-3 py-5 pb-24 sm:pb-8">
       <Link href="/" className="text-sm font-bold text-emerald-800">← নতুন করে খুঁজুন</Link>
       <h1 className="mt-1 text-lg font-bold">{label}</h1>
       <p className="mt-0.5 text-sm text-gray-600">
-        {allDb.length} জন ডাক্তার • কম ফি আগে সর্ট available
+        {allDb.length} জন ডাক্তার • বাজেট ফিল্টার নিচে
       </p>
 
-      {/* Fee + sort bar */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      {/* Budget + sort bar (sticky) */}
+      <div className="sticky top-14 z-10 -mx-1 bg-gray-50/95 px-1 py-2 backdrop-blur">
+        <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500">বাজেট ফিল্টার</p>
+        <div className="flex flex-wrap items-center gap-2">
         {FEE_RANGES.map((r) => {
           const active = (f.fee ?? "all") === r.value;
           return (
@@ -149,6 +163,7 @@ export default async function DoctorsPage({ searchParams }: { searchParams: Prom
         >
           ৳ কম → বেশি
         </Link>
+        </div>
       </div>
 
       {allDb.length === 0 && seedsMatched.length === 0 ? (
@@ -168,7 +183,7 @@ export default async function DoctorsPage({ searchParams }: { searchParams: Prom
         <>
           <div className="mt-4 flex flex-col gap-3">
             {allDb.map((d) => (
-              <DoctorCard key={d.id} doctor={d} />
+              <DoctorCard key={d.id} doctor={d} from={fromUrl} />
             ))}
           </div>
           {seedsMatched.length > 0 && (
@@ -179,7 +194,7 @@ export default async function DoctorsPage({ searchParams }: { searchParams: Prom
               </p>
               <div className="mt-3 flex flex-col gap-3">
                 {seedsMatched.map((d) => (
-                  <DoctorCard key={d.id} doctor={d} />
+                  <DoctorCard key={d.id} doctor={d} from={fromUrl} />
                 ))}
               </div>
             </section>

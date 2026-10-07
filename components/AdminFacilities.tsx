@@ -82,8 +82,9 @@ export default function AdminFacilities() {
   const input = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm";
 
   return (
-    <div className="mt-4 rounded-2xl border p-4">
-      <p className="text-base font-bold">🏥 হাসপাতাল / ডায়াগনস্টিক ম্যানেজ ({list.length} DB + seed)</p>
+    <div>
+      <p className="text-sm font-bold">🏥 হাসপাতাল / ডায়াগনস্টিক ({list.length} DB + seed)</p>
+      <p className="mt-0.5 text-[11px] text-gray-500">নতুন প্রতিষ্ঠান যোগ করুন — Hospitals/Diagnostics পাতায় দেখা যাবে।</p>
       <form onSubmit={onSubmit} className="mt-3 grid gap-2 sm:grid-cols-2">
         <div className="flex gap-1.5">
           <button type="button" onClick={() => setKind("hospital")} className={`flex-1 rounded-lg border px-3 py-2 text-sm font-bold ${kind === "hospital" ? "border-emerald-700 bg-emerald-700 text-white" : ""}`}>হাসপাতাল</button>

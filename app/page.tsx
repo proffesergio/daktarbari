@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { DIVISIONS } from "@/lib/divisions";
 import { SPECIALTIES_BN } from "@/lib/specialties";
-import { FEE_RANGES, type FeeRange } from "@/lib/fees";
 import {
   Search,
   RotateCcw,
@@ -12,12 +11,11 @@ import {
   ChevronRight,
   MapPin,
   Stethoscope,
-  Wallet,
   User,
   Check,
 } from "lucide-react";
 
-const STEPS = ["বিভাগ", "জেলা", "উপজেলা", "বিশেষজ্ঞ", "বাজেট"];
+const STEPS = ["বিভাগ", "জেলা", "উপজেলা", "বিশেষজ্ঞ"];
 
 export default function Home() {
   const [step, setStep] = useState(0);
@@ -26,8 +24,6 @@ export default function Home() {
   const [upazila, setUpazila] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [q, setQ] = useState("");
-  const [fee, setFee] = useState<FeeRange>("all");
-  const [sort, setSort] = useState<"smart" | "fee_asc">("smart");
   const [filterText, setFilterText] = useState("");
 
   const districts = useMemo(
@@ -65,8 +61,6 @@ export default function Home() {
     setUpazila("");
     setSpecialty("");
     setQ("");
-    setFee("all");
-    setSort("smart");
     setStep(0);
     setFilterText("");
   }
@@ -96,8 +90,6 @@ export default function Home() {
   if (upazila) params.set("area", upazila);
   if (specialty) params.set("specialty", specialty);
   if (q.trim()) params.set("q", q.trim());
-  if (fee !== "all") params.set("fee", fee);
-  if (sort === "fee_asc") params.set("sort", "fee_asc");
   const query = `/doctors?${params.toString()}`;
   const hasAny = division || specialty || q.trim();
 
@@ -116,7 +108,7 @@ export default function Home() {
           সঠিক ডাক্তার খুঁজুন
         </h1>
         <p className="mt-1 text-sm text-emerald-50">
-          নাম • বিশেষজ্ঞ • লোকেশন • বাজেট — ৫ ধাপে স্মার্ট সার্চ
+          নাম • বিশেষজ্ঞ • লোকেশন — ৪ ধাপে স্মার্ট সার্চ (বাজেট ফিল্টার রেজাল্ট পেজে)
         </p>
         {/* Progress */}
         <div className="mt-4">
@@ -264,30 +256,11 @@ export default function Home() {
                 </button>
               ))}
             </div>
-          </section>
-        )}
-
-        {step === 4 && (
-          <section>
-            <h2 className="flex items-center gap-2 text-base font-bold">
-              <Wallet size={18} className="text-emerald-700" /> বাজেট + সর্ট
-            </h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {FEE_RANGES.map((r) => (
-                <button key={r.value} onClick={() => setFee(r.value)} className={chip(fee === r.value)}>
-                  {r.label}
-                </button>
-              ))}
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button onClick={() => setSort("smart")} className={chip(sort === "smart")}>✨ স্মার্ট সর্ট</button>
-              <button onClick={() => setSort("fee_asc")} className={chip(sort === "fee_asc")}>৳ কম → বেশি</button>
-            </div>
             {/* Summary */}
             <div className="animate-fade-up mt-4 rounded-xl bg-emerald-50 p-3 text-sm">
               <p className="font-bold text-emerald-900">আপনার সার্চ:</p>
               <p className="mt-1 text-gray-700">
-                {[division, district, upazila, specialty, q.trim() && `“${q.trim()}”`, fee !== "all" ? FEE_RANGES.find((x) => x.value === fee)?.label : "", sort === "fee_asc" ? "কম ফি আগে" : ""].filter(Boolean).join(" • ") || "সব ডাক্তার"}
+                {[division, district, upazila, specialty, q.trim() && `“${q.trim()}”`].filter(Boolean).join(" • ") || "সব ডাক্তার"}
               </p>
             </div>
           </section>

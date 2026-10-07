@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { PhoneCall, MapPin, Clock, BadgeCheck, ShieldCheck } from "lucide-react";
 import VoteButtons from "@/components/VoteButtons";
 import VerifyPanel from "@/components/VerifyPanel";
+import BackButton from "@/components/BackButton";
 import DoctorPhoto from "@/components/DoctorPhoto";
 import { getSupabasePublic, getSupabaseAdmin } from "@/lib/supabase";
 import { findSeed } from "@/lib/seed-doctors";
@@ -48,8 +49,9 @@ async function getDoctor(id: string): Promise<Doctor | null> {
   }
 }
 
-export default async function DoctorDetail({ params }: { params: Promise<{ id: string }> }) {
+export default async function DoctorDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ from?: string }> }) {
   const { id } = await params;
+  const { from } = await searchParams;
   const d = await getDoctor(id);
 
   if (!d) {
@@ -67,10 +69,13 @@ export default async function DoctorDetail({ params }: { params: Promise<{ id: s
   const isBnc = id.startsWith("bnc-");
   const isExternal = isSeed || isQimp || isBdd || isBnc;
   const hasPhone = !!d.appointment_contact && /^01[3-9]\d{8}$/.test(d.appointment_contact.replace(/[\s\-()]/g, ""));
+  // Only allow internal return URLs (open-redirect safe)
+  const backHref = from && from.startsWith("/") && !from.startsWith("//") ? from : "/doctors";
+  const backLabel = backHref.startsWith("/doctors") ? "← ফলাফলে ফিরুন" : "← ফিরে যান";
 
   return (
     <div className="mx-auto max-w-3xl px-3 py-5 pb-24 sm:pb-8">
-      <Link href="/" className="text-sm font-bold text-emerald-800">← ফিরে যান</Link>
+      <BackButton fallback={backHref} label={backLabel} />
       <div className="mt-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
         <div className="flex items-center gap-3">
           <DoctorPhoto doctor={d} size={72} />

@@ -24,18 +24,18 @@ export default function AdminActions() {
   }
 
   return (
-    <div className="mt-4 rounded-2xl border-2 border-dashed p-4">
-      <p className="text-xl font-bold">📥 Sheet ↔ DB</p>
-      <p className="text-lg text-gray-600">প্রথমে Seed তুলুন (একবার), এরপর Sheet এডিট করে Sync চাপুন — ওয়েবসাইট আপডেট হবে।</p>
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-        <button onClick={() => run("/api/admin/seed", "Seed")} disabled={!!busy} className="touch-target rounded-xl bg-emerald-700 px-5 text-xl font-bold text-white disabled:bg-gray-400">
-          {busy === "Seed" ? "..." : "① সব Seed তুলুন (~১৩০০+)"}
+    <div className="mt-2.5 rounded-xl border border-dashed border-gray-300 p-3">
+      <p className="text-sm font-bold">📥 Sheet ↔ DB সিংক</p>
+      <p className="mt-0.5 text-xs text-gray-500">প্রথমে Seed তুলুন (একবার), এরপর Sheet এডিট করে Sync চাপুন — ওয়েবসাইট আপডেট হবে।</p>
+      <div className="mt-2.5 flex flex-col gap-1.5 sm:flex-row">
+        <button onClick={() => run("/api/admin/seed", "Seed")} disabled={!!busy} className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white disabled:bg-gray-400">
+          {busy === "Seed" ? "…" : "① সব Seed তুলুন"}
         </button>
-        <button onClick={() => run("/api/admin/sync", "Sync")} disabled={!!busy} className="touch-target rounded-xl border-2 border-emerald-700 px-5 text-xl font-bold text-emerald-800 disabled:opacity-50">
-          {busy === "Sync" ? "..." : "② Sheet থেকে Sync"}
+        <button onClick={() => run("/api/admin/sync", "Sync")} disabled={!!busy} className="rounded-xl border border-emerald-700 px-4 py-2.5 text-sm font-bold text-emerald-800 disabled:opacity-50">
+          {busy === "Sync" ? "…" : "② Sheet থেকে Sync"}
         </button>
       </div>
-      {msg && <p className="mt-2 text-lg font-bold">{msg}</p>}
+      {msg && <p className="mt-2 text-xs font-bold">{msg}</p>}
     </div>
   );
 }

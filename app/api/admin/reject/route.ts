@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { syncSheetStatus } from "@/lib/adminSheets";
 
 export const dynamic = "force-dynamic";
-const schema = z.object({ id: z.string().uuid() });
+const schema = z.object({ id: z.string().min(1) });
 
 export async function POST(req: Request) {
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "অননুমোদিত" }, { status: 401 });

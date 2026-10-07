@@ -4,37 +4,50 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 import { SEED_DOCTORS } from "@/lib/seed-doctors";
 import { QIMP_DOCTORS } from "@/lib/seed-qimp14";
 import { filterBdd } from "@/lib/seed-bddoctor";
+import { BANCHARAMPUR_DOCTORS } from "@/lib/seed-bancharampur";
+import { findDivisionByDistrict } from "@/lib/divisions";
+import { parseFeeMin } from "@/lib/fees";
 
 export const dynamic = "force-dynamic";
 
-// One-click: push all 95 local seeds (with photos) into Sheet + DB.
+// One-click: push all local seeds (with photos) into Sheet + DB.
 // Ids are stable (seed-01, qimp-01) so re-running never duplicates.
 export async function POST() {
   if (!(await isAdminAuthenticated())) return NextResponse.json({ error: "অননুমোদিত" }, { status: 401 });
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return NextResponse.json({ error: "DB কনফিগার হয়নি" }, { status: 500 });
   try {
     const sb = getSupabaseAdmin();
-    const rows = [...SEED_DOCTORS, ...QIMP_DOCTORS, ...filterBdd({})].map((d) => ({
+    const rows = [...SEED_DOCTORS, ...QIMP_DOCTORS, ...BANCHARAMPUR_DOCTORS, ...filterBdd({})].map((d) => ({
       id: d.id,
       name_bn: d.name_bn,
       name_en: d.name_en,
       specialty_bn: d.specialty_bn,
       bmdc_reg_no: d.bmdc_reg_no,
+      location_division: d.location_division ?? findDivisionByDistrict(d.location_district),
       location_district: d.location_district,
       location_upazila_area: d.location_upazila_area,
       chamber_address_bn: d.chamber_address_bn,
       appointment_contact: d.appointment_contact,
       visiting_hours_bn: d.visiting_hours_bn,
       visiting_fee_approx: d.visiting_fee_approx,
+      fee_min: d.fee_min ?? parseFeeMin(d.visiting_fee_approx),
       photo_url: d.photo_url ?? null,
       status: "PENDING",
       created_at: d.created_at,
     }));
-    // chunked upsert to stay safe on large batches
+    // chunked upsert to stay safe on large batches (retry without new
+    // columns on pre-migration DBs)
     let synced = 0;
     for (let i = 0; i < rows.length; i += 25) {
-      const { error } = await sb.from("doctors").upsert(rows.slice(i, i + 25), { onConflict: "id" });
-      if (error) throw error;
+      const chunk = rows.slice(i, i + 25);
+      const { error } = await sb.from("doctors").upsert(chunk, { onConflict: "id" });
+      if (error && /column|location_division|fee_min/i.test(error.message)) {
+        const legacy = chunk.map(({ location_division: _d, fee_min: _f, ...r }) => r);
+        const retry = await sb.from("doctors").upsert(legacy, { onConflict: "id" });
+        if (retry.error) throw retry.error;
+      } else if (error) {
+        throw error;
+      }
       synced += Math.min(25, rows.length - i);
     }
 
