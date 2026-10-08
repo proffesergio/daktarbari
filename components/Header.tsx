@@ -33,11 +33,11 @@ export default function Header() {
             <Menu size={20} />
           </button>
           <Link href="/" className="flex min-w-0 flex-1 items-center gap-2" aria-label="ডাক্তার বাড়ি">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0A1930] text-[#E2C78F]">
               <Stethoscope size={20} />
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-base font-bold leading-tight text-emerald-900">ডাক্তার বাড়ি</span>
+              <span className="block truncate text-base font-bold leading-tight text-[#0A1930]">ডাক্তার বাড়ি</span>
               <span className="hidden text-[11px] text-gray-500 sm:block">বাংলাদেশের ডাক্তার ডিরেক্টরি</span>
             </span>
           </Link>
@@ -46,14 +46,14 @@ export default function Header() {
               <Link
                 key={n.href}
                 href={n.href}
-                className={`rounded-lg px-3 py-2 text-sm font-bold ${n.active ? "bg-emerald-50 text-emerald-800" : "text-gray-700 hover:bg-gray-50"}`}
+                className={`rounded-lg px-3 py-2 text-sm font-bold ${n.active ? "bg-[#FAF7F0] text-[#0A1930]" : "text-gray-700 hover:bg-gray-50"}`}
               >
                 {n.label}
               </Link>
             ))}
             <Link
               href="/add"
-              className="ml-1 flex items-center gap-1 rounded-xl bg-emerald-700 px-3.5 py-2 text-sm font-bold text-white hover:bg-emerald-800"
+              className="ml-1 flex items-center gap-1 rounded-xl bg-[#0A1930] px-3.5 py-2 text-sm font-bold text-white hover:bg-[#14365D]"
             >
               <Plus size={16} /> তথ্য যুক্ত করুন
             </Link>
@@ -61,7 +61,7 @@ export default function Header() {
           <Link
             href="/add"
             aria-label="তথ্য যুক্ত করুন"
-            className="rounded-xl bg-emerald-700 p-2 text-white md:hidden"
+            className="rounded-xl bg-[#0A1930] p-2 text-white md:hidden"
           >
             <Plus size={20} />
           </Link>
@@ -74,8 +74,8 @@ export default function Header() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setDrawer(false)} />
           <aside className="animate-drawer-in absolute left-0 top-0 flex h-full w-[86%] max-w-sm flex-col bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b p-3">
-              <span className="flex items-center gap-2 text-sm font-bold">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-700 text-white">
+              <span className="flex items-center gap-2 text-sm font-bold text-[#0A1930]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0A1930] text-[#E2C78F]">
                   <Stethoscope size={18} />
                 </span>
                 ক্যাটাগরি অনুযায়ী খুঁজুন
@@ -85,7 +85,7 @@ export default function Header() {
               </button>
             </div>
             <div className="border-b p-3">
-              <div className="flex items-center gap-2 rounded-xl border px-3 py-2 focus-within:border-emerald-600">
+              <div className="flex items-center gap-2 rounded-xl border px-3 py-2 focus-within:border-[#256662]">
                 <Search size={16} className="text-gray-400" />
                 <input
                   value={q}
@@ -104,7 +104,7 @@ export default function Header() {
                     key={s}
                     href={`/doctors?specialty=${encodeURIComponent(s)}`}
                     onClick={() => setDrawer(false)}
-                    className="rounded-lg px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-emerald-50 hover:text-emerald-800"
+                    className="rounded-lg px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-[#FAF7F0] hover:text-[#0A1930]"
                   >
                     {s}
                   </Link>
@@ -118,7 +118,7 @@ export default function Header() {
                     key={d.name_bn}
                     href={`/doctors?division=${encodeURIComponent(d.name_bn)}`}
                     onClick={() => setDrawer(false)}
-                    className="rounded-lg border px-3 py-2 text-center text-sm font-bold text-gray-800 hover:border-emerald-500"
+                    className="rounded-lg border px-3 py-2 text-center text-sm font-bold text-gray-800 hover:border-[#C9A86A]"
                   >
                     {d.name_bn}
                   </Link>
@@ -132,7 +132,7 @@ export default function Header() {
                 <Link href="/diagnostics" onClick={() => setDrawer(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-gray-800 hover:bg-gray-50">
                   <FlaskConical size={16} /> ডায়াগনস্টিক
                 </Link>
-                <Link href="/all-doctors" onClick={() => setDrawer(false)} className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm font-bold text-amber-900">
+                <Link href="/all-doctors" onClick={() => setDrawer(false)} className="flex items-center gap-2 rounded-lg bg-[#FAF7F0] px-3 py-2 text-sm font-bold text-[#0A1930]">
                   ✨ সকল ডাক্তার
                 </Link>
               </div>

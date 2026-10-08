@@ -28,14 +28,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="bn" className={`${hindSiliguri.variable} ${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
+      <body className="min-h-full flex flex-col bg-[#FAF7F0] text-gray-900">
         <Suspense fallback={null}>
           <LoadingBar />
         </Suspense>
         <Header />
         <main className="flex-1">{children}</main>
-        <footer className="border-t bg-white px-4 py-6 pb-24 text-center text-sm text-gray-500 md:pb-6">
+        <footer className="border-t border-white/10 bg-[#0A1930] px-4 py-6 pb-24 text-center text-sm text-white/70 md:pb-6">
           ডাক্তার বাড়ি — তথ্য যাচাই করে ব্যবহার করুন | জরুরিতে ৯৯৯
+          <span className="mt-1 block text-[11px] text-white/40">মানচিত্র সীমানা: geoBoundaries CC-BY-4.0</span>
         </footer>
         <BottomNav />
       </body>

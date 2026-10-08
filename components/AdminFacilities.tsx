@@ -37,7 +37,12 @@ export default function AdminFacilities() {
   }
 
   useEffect(() => {
-    load();
+    // Deferred so the initial fetch (which calls setState on resolve) runs
+    // outside the effect body — satisfies react-hooks/set-state-in-effect.
+    const t = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(t);
   }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {

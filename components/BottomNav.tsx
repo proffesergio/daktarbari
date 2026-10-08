@@ -24,9 +24,9 @@ export default function BottomNav() {
             <Link
               key={it.href}
               href={it.href}
-              className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold ${active ? "text-emerald-700" : "text-gray-500"}`}
+              className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold ${active ? "text-[#0A1930]" : "text-gray-500"}`}
             >
-              <span className={`flex h-7 items-center justify-center rounded-full px-4 ${active ? "bg-emerald-50" : ""}`}>
+              <span className={`flex h-7 items-center justify-center rounded-full px-4 ${active ? "bg-[#FAF7F0]" : ""}`}>
                 <Icon size={19} />
               </span>
               {it.label}

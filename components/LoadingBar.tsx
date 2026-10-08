@@ -13,14 +13,17 @@ export default function LoadingBar() {
   const [width, setWidth] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Complete on route settle
+  // Complete on route settle (deferred to satisfy react-hooks/set-state-in-effect)
   useEffect(() => {
-    setWidth(100);
-    const t = setTimeout(() => {
+    const t1 = setTimeout(() => setWidth(100), 0);
+    const t2 = setTimeout(() => {
       setActive(false);
       setWidth(0);
     }, 350);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [pathname, searchParams]);
 
   useEffect(() => {
@@ -71,7 +74,7 @@ export default function LoadingBar() {
   return (
     <div aria-hidden className="fixed left-0 right-0 top-0 z-[60] h-[3px] bg-transparent">
       <div
-        className="animate-progress-shimmer h-full rounded-r-full bg-gradient-to-r from-emerald-500 via-amber-400 to-emerald-600 transition-[width] duration-300 ease-out"
+        className="animate-progress-shimmer h-full rounded-r-full bg-gradient-to-r from-[#14365D] via-[#C9A86A] to-[#14365D] transition-[width] duration-300 ease-out"
         style={{ width: `${width}%` }}
       />
     </div>
