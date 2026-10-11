@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdmin, getSupabasePublic } from "@/lib/supabase";
+import { rateLimit, clientIpHash, LIMITS } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const lim = await rateLimit(req, "verify", LIMITS.verify.limit, LIMITS.verify.windowMs);
+  if (!lim.ok) return NextResponse.json({ error: "অনেক যাচাই — পরে আবার চেষ্টা করুন" }, { status: 429 });
   const p = postSchema.safeParse(await req.json().catch(() => null));
   if (!p.success) return NextResponse.json({ error: "ভুল তথ্য" }, { status: 400 });
   if (p.data.action === "correct" && !/^01[3-9]\d{8}$/.test(p.data.phone.replace(/[\s-]/g, ""))) {
@@ -43,6 +46,7 @@ export async function POST(req: Request) {
       doctor_id: p.data.doctor_id,
       action: p.data.action,
       phone: p.data.phone.replace(/[\s-]/g, ""),
+      ip_hash: clientIpHash(req),
     });
     if (error) throw error;
     return NextResponse.json({ ok: true });
@@ -50,3 +54,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "সংরক্ষণ ব্যর্থ" }, { status: 500 });
   }
 }
+

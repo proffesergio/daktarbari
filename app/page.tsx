@@ -7,6 +7,8 @@ import { DIVISIONS, findDivisionByDistrict } from "@/lib/divisions";
 import { SPECIALTIES_BN } from "@/lib/specialties";
 import { useDistrictStats } from "@/lib/useDistrictStats";
 import DistrictCounters from "@/components/DistrictCounters";
+import VoiceSearch from "@/components/VoiceSearch";
+import { track } from "@/lib/track";
 import {
   Search,
   RotateCcw,
@@ -270,9 +272,10 @@ export default function Home() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="ডাক্তারের নাম লিখুন (ঐচ্ছিক) — যেমন: রহিম, Shafiqul"
+                placeholder="ডাক্তারের নাম লিখুন বা 🎙️ বলুন — যেমন: রহিম"
                 className="w-full bg-transparent text-sm outline-none"
               />
+              <VoiceSearch onResult={(t) => setQ(t)} />
               {q && (
                 <button onClick={() => setQ("")} className="text-xs font-bold text-gray-500">মুছুন</button>
               )}
@@ -320,6 +323,14 @@ export default function Home() {
           ) : (
             <Link
               href={hasAny ? query : "/all-doctors"}
+              onClick={() =>
+                track(
+                  "search",
+                  undefined,
+                  [division, district, upazila, specialty].filter(Boolean).join(" • "),
+                  q.trim(),
+                )
+              }
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0A1930] px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#14365D]"
             >
               <Search size={16} /> {hasAny ? "ডাক্তার খুঁজুন" : "সব ডাক্তার দেখুন"}

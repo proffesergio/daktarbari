@@ -34,7 +34,25 @@ export function rowToDoctor(r: string[]) {
   };
 }
 
-export async function syncSheetToDb(): Promise<{ synced: number; total: number }> {
+// DB-WINS partition: sheet ids already present in Postgres are skipped
+// (never overwritten), only genuinely new ids get imported.
+// Pure helper so the rule is unit-testable.
+export function partitionNewIds(sheetIds: string[], dbIds: Set<string>): { fresh: string[]; skipped: number } {
+  const seen = new Set<string>();
+  const fresh: string[] = [];
+  for (const id of sheetIds) {
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    if (!dbIds.has(id)) fresh.push(id);
+  }
+  return { fresh, skipped: seen.size - fresh.length };
+}
+
+// Sheet → DB import. DB-WINS: the Sheet is a mirror + bulk-entry source,
+// so rows whose id already exists in Postgres are NEVER overwritten
+// (this used to revert admin approvals back to PENDING).
+// Returns imported / skipped(existing) / total for sync logs.
+export async function syncSheetToDb(): Promise<{ synced: number; total: number; skipped: number }> {
   const sheets = getSheetsClient();
   const sid = process.env.GOOGLE_SHEET_ID!;
   const [ap, pe] = await Promise.all([
@@ -48,8 +66,18 @@ export async function syncSheetToDb(): Promise<{ synced: number; total: number }
     if (d) byId.set(d.id, d); // last write wins, keyed by id → no duplicates
   }
   const sb = getSupabaseAdmin();
+  // DB-wins: only ids missing from Postgres get imported.
+  const { data: existing } = await sb.from("doctors").select("id").limit(10000);
+  const have = new Set((existing ?? []).map((r) => (r as { id: string }).id));
+  const { fresh } = partitionNewIds([...byId.keys()], have);
+  const freshSet = new Set(fresh);
   let synced = 0;
+  let skipped = 0;
   for (const d of byId.values()) {
+    if (!freshSet.has(d.id)) {
+      skipped++;
+      continue;
+    }
     // photo_url is not a DB column (seed-only); strip before upsert.
     // location_division/fee_min need migration — fallback without them.
     const { photo_url: _photo, ...dbRow } = d;
@@ -64,5 +92,5 @@ export async function syncSheetToDb(): Promise<{ synced: number; total: number }
     }
     if (!error) synced++;
   }
-  return { synced, total: byId.size };
+  return { synced, total: byId.size, skipped };
 }

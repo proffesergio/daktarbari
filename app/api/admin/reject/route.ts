@@ -3,6 +3,7 @@ import { z } from "zod";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { syncSheetStatus } from "@/lib/adminSheets";
+import { logAdmin } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 const schema = z.object({ id: z.string().min(1) });
@@ -16,6 +17,7 @@ export async function POST(req: Request) {
     const { error } = await sb.from("doctors").update({ status: "REJECTED" }).eq("id", p.data.id);
     if (error) throw error;
     await syncSheetStatus(p.data.id, "REJECTED");
+    await logAdmin("reject", p.data.id, "");
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Reject ব্যর্থ" }, { status: 500 });

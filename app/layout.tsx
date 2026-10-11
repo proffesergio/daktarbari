@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import LoadingBar from "@/components/LoadingBar";
+import BackToTop from "@/components/BackToTop";
 import { Suspense } from "react";
 
 const hindSiliguri = Hind_Siliguri({
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <span className="mt-1 block text-[11px] text-white/40">মানচিত্র সীমানা: geoBoundaries CC-BY-4.0</span>
         </footer>
         <BottomNav />
+        <BackToTop />
       </body>
     </html>
   );

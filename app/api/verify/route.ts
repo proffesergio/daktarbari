@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdmin, getSupabasePublic } from "@/lib/supabase";
+import { rateLimit, clientIpHash, LIMITS } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const lim = await rateLimit(req, "verify", LIMITS.verify.limit, LIMITS.verify.windowMs);
+  if (!lim.ok) return NextResponse.json({ error: "অনেক যাচাই — পরে আবার চেষ্টা করুন" }, { status: 429 });
   const p = postSchema.safeParse(await req.json().catch(() => null));
   if (!p.success) return NextResponse.json({ error: "ভুল তথ্য" }, { status: 400 });
   const { doctor_id, target, action, note } = p.data;
@@ -75,12 +78,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "DB কনফিগার হয়নি" }, { status: 500 });
   try {
     const sb = process.env.SUPABASE_SERVICE_ROLE_KEY ? getSupabaseAdmin() : getSupabasePublic();
+    const storedNote = target === "phone" ? clean : note.trim();
     // Try new table, fallback to legacy phone table for phone confirms
     const { error } = await sb.from("doctor_verifications").insert({
       doctor_id,
       target,
       action,
-      note: target === "phone" ? clean : note.trim(),
+      note: storedNote,
+      ip_hash: clientIpHash(req),
     });
     if (error) {
       if (target !== "phone") throw error;
@@ -91,9 +96,51 @@ export async function POST(req: Request) {
         phone: action === "correct" ? clean : "",
       });
       if (fb.error) throw fb.error;
+      return NextResponse.json({ ok: true });
     }
-    return NextResponse.json({ ok: true });
+
+    // Hybrid consensus: identical low-risk corrections (hours/fee/chamber)
+    // from 3+ independent submissions auto-apply — no admin wait.
+    // phone/bmdc ALWAYS need admin (fraud-sensitive).
+    let autoApplied = false;
+    if (action === "correct" && (["hours", "fee", "chamber"] as string[]).includes(target)) {
+      try {
+        const { findConsensusIds } = await import("@/lib/consensus");
+        const { data: same } = await sb
+          .from("doctor_verifications")
+          .select("id,note")
+          .eq("doctor_id", doctor_id)
+          .eq("target", target)
+          .eq("action", "correct")
+          .eq("reviewed", false)
+          .limit(20);
+        const matchingIds = findConsensusIds((same ?? []) as { id: string; note: string }[], storedNote, 3);
+        if (matchingIds.length > 0) {
+          const { parseFeeMin } = await import("@/lib/fees");
+          const col =
+            target === "chamber" ? "chamber_address_bn" : target === "fee" ? "visiting_fee_approx" : "visiting_hours_bn";
+          const patch: Record<string, unknown> = { [col]: storedNote };
+          if (target === "fee") patch.fee_min = parseFeeMin(storedNote);
+          const { error: upErr } = await sb.from("doctors").update(patch).eq("id", doctor_id);
+          if (!upErr) {
+            await sb.from("doctor_verifications").update({ reviewed: true }).in("id", matchingIds);
+            try {
+              const { upsertApprovedRow } = await import("@/lib/adminSheets");
+              const { data: doc } = await sb.from("doctors").select("*").eq("id", doctor_id).maybeSingle();
+              if (doc) await upsertApprovedRow(doc);
+            } catch {
+              /* mirror is best-effort */
+            }
+            autoApplied = true;
+          }
+        }
+      } catch {
+        /* consensus is best-effort */
+      }
+    }
+    return NextResponse.json({ ok: true, autoApplied });
   } catch {
     return NextResponse.json({ error: "সংরক্ষণ ব্যর্থ" }, { status: 500 });
   }
 }
+

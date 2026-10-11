@@ -3,11 +3,12 @@ import { z } from "zod";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { upsertApprovedRow, syncSheetStatus } from "@/lib/adminSheets";
+import { logAdmin } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
 const schema = z.object({
-  action: z.enum(["approve", "reject", "delete"]),
+  action: z.enum(["approve", "reject", "delete", "verify"]),
   ids: z.array(z.string().min(1)).min(1).max(100),
 });
 
@@ -35,9 +36,16 @@ export async function POST(req: Request) {
         if (error) throw error;
         await syncSheetStatus(id, "DELETED");
         results.push({ id, ok: true, sheet: "stamped" });
+      } else if (action === "verify") {
+        // Mark verified without touching status/Sheet (badge-only upgrade).
+        const { error } = await sb.from("doctors").update({ verified: true }).eq("id", id);
+        if (error) throw error;
+        results.push({ id, ok: true, sheet: "skipped" });
       } else {
         const status = action === "approve" ? "APPROVED" : "REJECTED";
-        const { error } = await sb.from("doctors").update({ status }).eq("id", id);
+        const patch: Record<string, unknown> = { status };
+        if (action === "approve") patch.verified = true;
+        const { error } = await sb.from("doctors").update(patch).eq("id", id);
         if (error) throw error;
         if (action === "approve") {
           const { data } = await sb.from("doctors").select("*").eq("id", id).maybeSingle();
@@ -57,5 +65,6 @@ export async function POST(req: Request) {
 
   const done = results.filter((r) => r.ok).length;
   const sheetOk = results.filter((r) => r.ok && r.sheet && r.sheet !== "failed" && r.sheet !== "skipped").length;
+  await logAdmin(`bulk_${action}`, null, `${done}/${queue.length}`);
   return NextResponse.json({ ok: true, action, done, total: queue.length, sheetOk, results });
 }

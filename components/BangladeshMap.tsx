@@ -11,6 +11,7 @@ import {
   districtBnFromShape,
   divisionBnFromShape,
 } from "@/lib/districtAliases";
+import { OSM_TILE_URL, OSM_ATTRIBUTION } from "@/lib/mapConfig";
 
 type Props = {
   byDistrict: Record<string, number>;
@@ -46,6 +47,28 @@ export default function BangladeshMap({
   const router = useRouter();
   const [geo, setGeo] = useState<{ type: string; features: BdFeature[] } | null>(null);
   const [geoError, setGeoError] = useState(false);
+  // Map tiles: free OSM default (no key). Admin can override via
+  // Admin → সেটিংস → Tile URL (DB site_settings) or NEXT_PUBLIC_MAP_TILE_URL.
+  const [tileUrl, setTileUrl] = useState(OSM_TILE_URL);
+  const [attribution, setAttribution] = useState(OSM_ATTRIBUTION);
+  const [provider, setProvider] = useState<"osm" | "custom">("osm");
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/settings/map", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (alive && j?.tileUrl) {
+          setTileUrl(j.tileUrl);
+          setAttribution(j.attribution || OSM_ATTRIBUTION);
+          setProvider(j.provider === "custom" ? "custom" : "osm");
+        }
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -138,7 +161,7 @@ export default function BangladeshMap({
           {loading ? "লাইভ মানচিত্র লোড হচ্ছে…" : live ? `লাইভ • মোট ${total} জন ডাক্তার` : "মানচিত্র প্রস্তুত — তথ্য যোগ হলে লাইভ হবে"}
         </p>
         <span className="ml-auto hidden rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-[#E2C78F] sm:inline">
-          ৬৪ জেলা • ট্যাপ করলেই সার্চ
+          ৬৪ জেলা • ট্যাপ করলেই সার্চ • {provider === "osm" ? "OSM ফ্রি" : "কাস্টম টাইল"}
         </span>
       </div>
 
@@ -160,10 +183,7 @@ export default function BangladeshMap({
             className="h-[340px] w-full sm:h-[440px]"
             attributionControl
           >
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a> • Boundaries: <a href="https://www.geoboundaries.org">geoBoundaries CC-BY-4.0</a>'
-            />
+            <TileLayer url={tileUrl} attribution={attribution} />
             <GeoJSON
               key={`${max}-${selectedDistrict ?? ""}-${Object.keys(byDistrict).length}`}
               data={geo as never}

@@ -39,7 +39,11 @@ export default function DoctorForm() {
         body: JSON.stringify(body),
       });
       const j = await res.json();
-      setMsg(res.ok ? "✅ জমা হয়েছে! যাচাইয়ের পর লাইভ হবে।" : `❌ ${j.error ?? "ব্যর্থ হয়েছে"}`);
+      setMsg(
+        res.ok
+          ? `✅ সঙ্গে সঙ্গে লাইভ! ⏳ “যাচাই বাকি” ব্যাজসহ দেখা যাবে — অ্যাডমিন যাচাই করলে ✓ হবে।${j.duplicate ? " (একই নম্বরে আরেকটি এন্ট্রি আছে — অ্যাডমিন মিলিয়ে দেখবে)" : ""}`
+          : `❌ ${j.error ?? "ব্যর্থ হয়েছে"}`,
+      );
       if (res.ok) {
         (e.target as HTMLFormElement).reset();
         setDistrict("");

@@ -25,6 +25,22 @@ export default function VerifyPanel({ doctorId }: { doctorId: string }) {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Deep link: /doctor/:id#verify-phone (or #verify-fee etc.) auto-opens the panel.
+  // Deferred via setTimeout so initial setState runs outside the effect body
+  // (satisfies react-hooks/set-state-in-effect).
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const h = window.location.hash.replace("#verify", "").replace("-", "") as VerifyTarget;
+      if (["phone", "chamber", "fee", "hours", "bmdc", "general"].includes(h)) {
+        setTarget(h);
+        setOpen(true);
+      } else if (window.location.hash === "#verify") {
+        setOpen(true);
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+
   useEffect(() => {
     let live = true;
     fetch(`/api/verify?doctor_id=${encodeURIComponent(doctorId)}`)

@@ -15,6 +15,9 @@ export type Doctor = {
   visiting_fee_approx: string;
   fee_min?: number | null;
   status: DoctorStatus;
+  verified?: boolean; // instant-live entries show amber badge until admin verifies
+  consult_available?: boolean; // doctor currently taking consultations
+  schedule?: { off?: string[]; note?: string; slots?: Record<string, string> } | null; // weekly off-days + per-day hours + note
   photo_url?: string | null; // seed/external entries only; not a DB column
   upvotes: number;
   downvotes: number;

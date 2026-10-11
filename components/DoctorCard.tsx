@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
-import { PhoneCall, MapPin, BadgeCheck, ShieldCheck } from "lucide-react";
+import { PhoneCall, MapPin, BadgeCheck, ShieldCheck, MessageCircle } from "lucide-react";
 import DoctorPhoto from "@/components/DoctorPhoto";
+import { whatsappLink } from "@/lib/completeness";
+import { isOpenToday } from "@/lib/schedule";
+import { track } from "@/lib/track";
 import type { Doctor } from "@/lib/types";
 
 // Compact modern card: expertise line + verify CTA (no "Verifying" wording)
@@ -10,7 +15,14 @@ export default function DoctorCard({ doctor, variant = "list", from }: { doctor:
   const hasPhone =
     !!doctor.appointment_contact &&
     /^01[3-9]\d{8}$/.test(doctor.appointment_contact.replace(/[\s\-()]/g, ""));
+  const wa = whatsappLink(
+    doctor.appointment_contact,
+    `আসসালামু আলাইকুম, আমি ${doctor.name_bn} (${doctor.specialty_bn})-এর সিরিয়াল নিতে চাই।`,
+  );
   const verifiedBmdc = !!doctor.bmdc_reg_no;
+  const showUnverified = doctor.verified === false;
+  const openToday = isOpenToday(doctor.schedule);
+  const consultOff = doctor.consult_available === false;
   const grid = variant === "grid";
   const detailHref = from ? `/doctor/${doctor.id}?from=${encodeURIComponent(from)}` : `/doctor/${doctor.id}`;
   const verifyHref = `${detailHref}#verify`;
@@ -37,6 +49,31 @@ export default function DoctorCard({ doctor, variant = "list", from }: { doctor:
                 <ShieldCheck size={12} /> তথ্য যাচাই করুন
               </Link>
             )}
+            {showUnverified && (
+              <span title="এই তথ্য এখনো অ্যাডমিন যাচাই করেনি — ফোনে নিশ্চিত হয়ে নিন" className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-900">
+                ⏳ যাচাই বাকি
+              </span>
+            )}
+            {!showUnverified && doctor.verified === true && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-800">
+                ✓ যাচাইকৃত
+              </span>
+            )}
+            {openToday === true && !consultOff && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                🟢 আজ খোলা
+              </span>
+            )}
+            {openToday === false && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-bold text-gray-600">
+                🔴 আজ বন্ধ
+              </span>
+            )}
+            {consultOff && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-bold text-gray-600">
+                পরামর্শ বন্ধ
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -51,18 +88,33 @@ export default function DoctorCard({ doctor, variant = "list", from }: { doctor:
       )}
       <div className={`flex gap-1.5 ${grid ? "mt-2" : "mt-3"}`}>
         {hasPhone ? (
-          <a
-            href={`tel:${doctor.appointment_contact}`}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-700 font-bold text-white hover:bg-emerald-800 ${grid ? "px-2 py-2 text-xs" : "px-3 py-2.5 text-sm"}`}
-          >
-            <PhoneCall size={grid ? 14 : 16} /> ফোন করুন
-          </a>
+          <>
+            <a
+              href={`tel:${doctor.appointment_contact}`}
+              onClick={() => track("call_tap", doctor.id)}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-700 font-bold text-white hover:bg-emerald-800 ${grid ? "px-2 py-2 text-xs" : "px-3 py-2.5 text-sm"}`}
+            >
+              <PhoneCall size={grid ? 14 : 16} /> ফোন করুন
+            </a>
+            {wa && !grid && (
+              <a
+                href={wa}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="WhatsApp-এ সিরিয়াল নিন"
+                onClick={() => track("whatsapp_tap", doctor.id)}
+                className="flex items-center justify-center rounded-xl bg-[#25D366] px-3 py-2.5 text-sm font-bold text-white hover:brightness-95"
+              >
+                <MessageCircle size={16} />
+              </a>
+            )}
+          </>
         ) : (
           <Link
             href={verifyHref}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gray-100 font-bold text-gray-600 hover:bg-gray-200 ${grid ? "px-2 py-2 text-[11px]" : "px-3 py-2.5 text-sm"}`}
           >
-            <PhoneCall size={grid ? 13 : 16} /> নম্বর যাচাই চলছে
+            <PhoneCall size={grid ? 13 : 16} /> নম্বর নেই? যোগ করুন
           </Link>
         )}
         <Link
@@ -72,6 +124,11 @@ export default function DoctorCard({ doctor, variant = "list", from }: { doctor:
           বিস্তারিত
         </Link>
       </div>
+      {!hasPhone && !grid && (
+        <p className="mt-1.5 text-center text-[11px] text-gray-500">
+          সঠিক নম্বর জানলে <Link href={verifyHref} className="font-bold text-emerald-700 underline">এখানে যোগ করুন</Link> — যাচাই হলে সবাই কল করতে পারবে।
+        </p>
+      )}
     </article>
   );
 }

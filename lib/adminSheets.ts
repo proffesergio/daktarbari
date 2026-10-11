@@ -1,4 +1,4 @@
-import { getSheetsClient, SHEET_TABS } from "@/lib/sheets";
+import { getSheetsClient, SHEET_TABS, SHEET_HEADERS } from "@/lib/sheets";
 
 export type DoctorSheetRow = {
   id: string;
@@ -106,7 +106,9 @@ export async function upsertApprovedRow(
 }
 
 // Legacy single-id entrypoint kept for the old approve route shape.
-// Prefers a caller-supplied verified row; falls back to stamping status only.
+// DB-WINS: admin writes go to Postgres first; the Sheet is a mirror.
+// REJECTED/DELETED now also stamp/remove the Approved tab row so a later
+// Sheet→DB import can never resurrect a rejected doctor.
 export async function syncSheetStatus(
   id: string,
   status: string,
@@ -145,7 +147,114 @@ export async function syncSheetStatus(
         });
       }
     }
+    // REJECTED / DELETED: mirror the decision into the Approved tab too.
+    if (status === "REJECTED" || status === "DELETED") {
+      await stampApprovedStatus(id, status);
+    }
   } catch {
     // ignore — Postgres is source of truth
   }
+}
+
+// Stamp column L of an Approved-tab row, or delete the row for DELETED.
+// Returns what happened (for sync logs / admin feedback).
+export async function stampApprovedStatus(
+  id: string,
+  status: string,
+): Promise<"stamped" | "deleted" | "missing" | "skipped" | "failed"> {
+  if (!sheetsReady()) return "skipped";
+  try {
+    const sheets = getSheetsClient();
+    const sid = process.env.GOOGLE_SHEET_ID!;
+    const rowNo = await findRowById(sheets, sid, SHEET_TABS.approved, id);
+    if (rowNo <= 0) return "missing";
+    if (status === "DELETED") {
+      // Look up the sheetId (gid) of the Approved tab, then delete the row.
+      const meta = await sheets.spreadsheets.get({ spreadsheetId: sid });
+      const tab = (meta.data.sheets ?? []).find(
+        (s) => s.properties?.title === SHEET_TABS.approved,
+      );
+      const sheetId = tab?.properties?.sheetId;
+      if (sheetId == null) return "failed";
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: sid,
+        requestBody: {
+          requests: [
+            {
+              deleteDimension: {
+                range: {
+                  sheetId,
+                  dimension: "ROWS",
+                  startIndex: rowNo - 1,
+                  endIndex: rowNo,
+                },
+              },
+            },
+          ],
+        },
+      });
+      return "deleted";
+    }
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: sid,
+      range: `${SHEET_TABS.approved}!L${rowNo}`,
+      valueInputOption: "RAW",
+      requestBody: { values: [[status]] },
+    });
+    return "stamped";
+  } catch {
+    return "failed";
+  }
+}
+
+export type SheetHealth = {
+  env: boolean;
+  auth: boolean;
+  tabs: { pending: boolean; approved: boolean; reports: boolean };
+  headersOk: boolean;
+  error: string;
+};
+
+// Read-only diagnostics for Admin → সিংক. Never writes.
+export async function checkSheetHealth(): Promise<SheetHealth> {
+  const bad: SheetHealth = {
+    env: false,
+    auth: false,
+    tabs: { pending: false, approved: false, reports: false },
+    headersOk: false,
+    error: "",
+  };
+  if (!process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
+    bad.error = "Google env বসানো হয়নি (SHEET_ID / EMAIL / PRIVATE_KEY)";
+    return bad;
+  }
+  bad.env = true;
+  try {
+    const sheets = getSheetsClient();
+    const sid = process.env.GOOGLE_SHEET_ID!;
+    const meta = await sheets.spreadsheets.get({ spreadsheetId: sid });
+    const titles = new Set((meta.data.sheets ?? []).map((s) => s.properties?.title));
+    bad.tabs = {
+      pending: titles.has(SHEET_TABS.pending),
+      approved: titles.has(SHEET_TABS.approved),
+      reports: titles.has(SHEET_TABS.reports),
+    };
+    bad.auth = true;
+    if (bad.tabs.pending) {
+      const h = await sheets.spreadsheets.values.get({
+        spreadsheetId: sid,
+        range: `${SHEET_TABS.pending}!A1:N1`,
+      });
+      const got = (h.data.values?.[0] ?? []).map((c) => String(c).trim());
+      bad.headersOk =
+        SHEET_HEADERS.length === got.length &&
+        SHEET_HEADERS.every((c, i) => got[i] === c);
+      if (!bad.headersOk) bad.error = `Pending হেডার মিলছে না (পাওয়া: ${got.slice(0, 4).join(",")}…)`;
+    } else {
+      bad.error = "Pending ট্যাব নেই";
+    }
+  } catch (e) {
+    bad.error = e instanceof Error ? e.message.slice(0, 200) : "Sheet পড়া যায়নি (শেয়ার/কী দেখুন)";
+  }
+  return bad;
 }
