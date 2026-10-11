@@ -181,6 +181,7 @@ export default function AdminLive({ rows }: { rows: LiveRow[] }) {
             </span>
             <span className="flex shrink-0 gap-1">
               <Link href={`/doctor/${d.id}`} className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-[11px] font-bold text-gray-700">দেখুন</Link>
+              <Link href={`/book/${d.id}`} target="_blank" title="ডাক্তারের শেয়ারযোগ্য বুকিং রুম" className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-[11px] font-bold text-gray-700">📋 বুকিং</Link>
               <button onClick={() => startEdit(d)} className="rounded-lg border border-emerald-700 px-2.5 py-1.5 text-[11px] font-bold text-emerald-800">এডিট</button>
               <button disabled={!!busy} onClick={() => issueLink(d.id, "edit")} title="ডাক্তারের সেলফ-এডিট লিংক তৈরি করুন" className="rounded-lg border border-sky-300 px-2.5 py-1.5 text-[11px] font-bold text-sky-700">✏️ লিংক</button>
               <button disabled={!!busy} onClick={() => issueLink(d.id, "inbox")} title="চেম্বারের সিরিয়াল ইনবক্স লিংক তৈরি করুন" className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-[11px] font-bold text-gray-700">📥 ইনবক্স</button>

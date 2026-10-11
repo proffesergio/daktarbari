@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
-import type { Feature, Geometry } from "geojson";
+import { MapContainer, TileLayer, GeoJSON, Marker, Tooltip } from "react-leaflet";
+import L from "leaflet";
+import type { Feature, Geometry, Position } from "geojson";
 import type { Layer, LeafletMouseEvent } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import {
@@ -24,6 +25,51 @@ type Props = {
 
 type BdFeatureProps = { shapeName: string };
 type BdFeature = Feature<Geometry, BdFeatureProps>;
+
+// Bangladesh-only view: bbox with a little padding; the map cannot be
+// panned or zoomed out past the country (base tiles still render at edges,
+// but the 64-district overlay + bounds keep the focus on Bangladesh).
+const BD_BOUNDS: [[number, number], [number, number]] = [
+  [20.0, 87.6],
+  [27.0, 93.1],
+];
+
+// Centroid approx via bbox center — cheap and stable for small districts.
+function centroidOf(geometry: Geometry): [number, number] | null {
+  let minLat = 90;
+  let maxLat = -90;
+  let minLng = 180;
+  let maxLng = -180;
+  const visit = (coords: unknown): void => {
+    if (Array.isArray(coords) && typeof coords[0] === "number") {
+      const [lng, lat] = coords as Position;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+    } else if (Array.isArray(coords)) {
+      for (const c of coords) visit(c);
+    }
+  };
+  visit((geometry as { coordinates: unknown }).coordinates);
+  if (minLat > maxLat || minLng > maxLng) return null;
+  return [(minLat + maxLat) / 2, (minLng + maxLng) / 2];
+}
+
+function countIcon(count: number, selected: boolean): L.DivIcon {
+  return L.divIcon({
+    className: "bd-count-marker",
+    html:
+      `<div style="display:flex;align-items:center;justify-content:center;` +
+      `min-width:26px;height:26px;padding:0 6px;border-radius:9999px;` +
+      `font-size:12px;font-weight:800;color:${selected ? "#0A1930" : "#FFFFFF"};` +
+      `background:${selected ? "#C9A86A" : "#14365D"};` +
+      `border:2px solid #FFFFFF;box-shadow:0 1px 4px rgba(10,25,48,.45);">` +
+      `${count}</div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+  });
+}
 
 // Sophisticated navy/harbor choropleth — densest districts go full ink navy,
 // empty districts stay warm parchment so the live fill reads instantly.
@@ -93,6 +139,29 @@ export default function BangladeshMap({
     [byDistrict],
   );
 
+  function goToDistrict(bn: string, divBn: string) {
+    onSelectDistrict?.(bn, divBn);
+    const params = new URLSearchParams();
+    if (divBn) params.set("division", divBn);
+    params.set("district", bn);
+    router.push(`/doctors?${params.toString()}`);
+  }
+
+  // Numbered pills for every district that has doctors (live counters).
+  const markers = useMemo(() => {
+    if (!geo) return [];
+    const out: { pos: [number, number]; bn: string; divBn: string; count: number }[] = [];
+    for (const f of geo.features) {
+      const bn = districtBnFromShape(f.properties.shapeName);
+      const count = byDistrict[bn] ?? 0;
+      if (count <= 0) continue;
+      const pos = centroidOf(f.geometry);
+      if (!pos) continue;
+      out.push({ pos, bn, divBn: divisionBnFromShape(f.properties.shapeName), count });
+    }
+    return out;
+  }, [geo, byDistrict]);
+
   const styleFor = (shapeName: string) => {
     const bn = districtBnFromShape(shapeName);
     const count = byDistrict[bn] ?? 0;
@@ -121,11 +190,7 @@ export default function BangladeshMap({
     );
     layer.on("click", (e: LeafletMouseEvent) => {
       e.originalEvent?.stopPropagation?.();
-      onSelectDistrict?.(bn, divBn);
-      const params = new URLSearchParams();
-      if (divBn) params.set("division", divBn);
-      params.set("district", bn);
-      router.push(`/doctors?${params.toString()}`);
+      goToDistrict(bn, divBn);
     });
     layer.on("mouseover", (e: LeafletMouseEvent) => {
       const target = e.target as unknown as {
@@ -179,6 +244,10 @@ export default function BangladeshMap({
           <MapContainer
             center={[23.685, 90.356]}
             zoom={7}
+            minZoom={6}
+            maxZoom={12}
+            maxBounds={BD_BOUNDS}
+            maxBoundsViscosity={1.0}
             scrollWheelZoom={false}
             className="h-[340px] w-full sm:h-[440px]"
             attributionControl
@@ -190,6 +259,22 @@ export default function BangladeshMap({
               style={(f) => styleFor((f as unknown as BdFeature | undefined)?.properties?.shapeName ?? "")}
               onEachFeature={onEach as never}
             />
+            {markers.map((m) => (
+              <Marker
+                key={m.bn}
+                position={m.pos}
+                icon={countIcon(m.count, selectedDistrict === m.bn)}
+                keyboard={false}
+                eventHandlers={{ click: () => goToDistrict(m.bn, m.divBn) }}
+              >
+                <Tooltip direction="top" offset={[0, -14]} opacity={0.95}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: "14px", fontWeight: 700 }}>{m.bn}</div>
+                    <div style={{ fontSize: "12px", color: "#14365D" }}>{m.count} জন ডাক্তার</div>
+                  </div>
+                </Tooltip>
+              </Marker>
+            ))}
           </MapContainer>
         )}
 
@@ -201,7 +286,7 @@ export default function BangladeshMap({
               <span key={c} className="h-3 w-5 rounded-sm border border-white shadow-sm" style={{ background: c }} />
             ))}
           </div>
-          <p className="mt-0.5 text-[10px] text-gray-500">কম → বেশি • সোনালি = সিলেক্টেড</p>
+          <p className="mt-0.5 text-[10px] text-gray-500">কম → বেশি • সংখ্যা = ডাক্তার • সোনালি = সিলেক্টেড</p>
         </div>
       </div>
     </div>

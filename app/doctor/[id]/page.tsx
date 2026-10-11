@@ -12,54 +12,24 @@ import ReviewSection, { type Review } from "@/components/ReviewSection";
 import ClaimForm from "@/components/ClaimForm";
 import TrackView from "@/components/TrackView";
 import { isOpenToday } from "@/lib/schedule";
-import { getSupabasePublic, getSupabaseAdmin } from "@/lib/supabase";
-import { findSeed } from "@/lib/seed-doctors";
-import { findQimp } from "@/lib/seed-qimp14";
-import { findBdd } from "@/lib/seed-bddoctor";
-import { findBancharampur } from "@/lib/seed-bancharampur";
-import type { Doctor } from "@/lib/types";
+import { getSupabasePublic } from "@/lib/supabase";
+import { getDoctorById } from "@/lib/doctorLookup";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const d = await getDoctor(id);
+  const d = await getDoctorById(id);
   return {
     title: d ? `${d.name_bn} | ডাক্তার বাড়ি` : "ডাক্তার | ডাক্তার বাড়ি",
     description: d ? `${d.specialty_bn}, ${d.location_upazila_area}, ${d.location_district}` : "ডাক্তারের বিস্তারিত",
   };
 }
 
-async function getDoctor(id: string): Promise<Doctor | null> {
-  const external = id.startsWith("seed-") || id.startsWith("qimp-");
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    try {
-      const sb = getSupabaseAdmin();
-      const q = sb.from("doctors").select("*").eq("id", id);
-      const { data } = external ? await q.maybeSingle() : await q.eq("status", "APPROVED").maybeSingle();
-      if (data) return data as Doctor;
-    } catch {
-      /* fall through to local */
-    }
-  }
-  if (id.startsWith("seed-")) return findSeed(id) ?? null;
-  if (id.startsWith("qimp-")) return findQimp(id) ?? null;
-  if (id.startsWith("bd-")) return findBdd(id) ?? null;
-  if (id.startsWith("bnc-")) return findBancharampur(id) ?? null;
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
-  try {
-    const sb = getSupabasePublic();
-    const { data } = await sb.from("doctors").select("*").eq("id", id).eq("status", "APPROVED").single();
-    return data as Doctor | null;
-  } catch {
-    return null;
-  }
-}
-
 export default async function DoctorDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ from?: string }> }) {
   const { id } = await params;
   const { from } = await searchParams;
-  const d = await getDoctor(id);
+  const d = await getDoctorById(id);
 
   if (!d) {
     return (
@@ -162,6 +132,9 @@ export default async function DoctorDetail({ params, searchParams }: { params: P
             <a href={`tel:${d.appointment_contact}`} className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800">
               <PhoneCall size={18} /> ফোন করুন: {d.appointment_contact}
             </a>
+            <Link href={`/book/${d.id}`} className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-[#0A1930] px-4 py-3 text-sm font-bold text-white hover:bg-[#14365D]">
+              📋 বুকিং রুম — সিরিয়াল ও পরামর্শ
+            </Link>
             <MissingInfoCta phone={d.appointment_contact} name={d.name_bn} specialty={d.specialty_bn} />
             <p className="mt-2 text-center text-xs text-gray-500">সিরিয়ালের জন্য উপরের বাটনে চাপ দিন • WhatsApp-ও চলবে</p>
           </>
@@ -170,6 +143,9 @@ export default async function DoctorDetail({ params, searchParams }: { params: P
             <p className="mt-3 rounded-xl bg-gray-100 p-3 text-center text-sm font-bold text-gray-600">
               সিরিয়াল নম্বর যাচাই চলছে — নিচে সঠিক নম্বর থাকলে পাঠান
             </p>
+            <Link href={`/book/${d.id}`} className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-[#0A1930] px-4 py-3 text-sm font-bold text-white hover:bg-[#14365D]">
+              📋 বুকিং রুম — অনুরোধ পাঠান
+            </Link>
             <MissingInfoCta phone={d.appointment_contact} name={d.name_bn} specialty={d.specialty_bn} />
           </>
         )}
