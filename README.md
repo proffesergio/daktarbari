@@ -1,3 +1,19 @@
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:0F172A,100:EF4444&height=180&section=header&text=DaktarBari&fontSize=40&fontColor=fff&animation=fadeIn&fontAlignY=35&desc=%E0%A6%A1%E0%A6%BE%E0%A6%95%E0%A7%8D%E0%A6%A4%E0%A6%BE%E0%A6%B0%20%E0%A6%AC%E0%A6%BE%E0%A6%A1%E0%A6%BC%E0%A6%BF%20%E2%80%A2%20Bangladesh%20Doctor%20Directory&descAlignY=55&descAlign=50" />
+
+<div align="center">
+
+### 🩺 ডাক্তার বাড়ি (daktarbari) — বাংলাদেশের ডাক্তার ডিরেক্টরি
+**Find the right doctor in Bangladesh - by location, specialty, chamber.**
+
+[TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+[Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+[Maps](https://img.shields.io/badge/Maps-Google_Maps-4285F4?style=for-the-badge&logo=googlemaps&logoColor=white)
+[AI Search](https://img.shields.io/badge/AI_Search-EF4444?style=for-the-badge&logo=openai&logoColor=white)
+
+</div>
+
+---
+
 <div align="center">
 
 # ডাক্তার বাড়ি · Daktarbari
@@ -15,6 +31,50 @@
 </div>
 
 ---
+
+### Problem
+
+> Finding a doctor in Dhaka: Which chamber? When available? Is he/she good? No central database.
+
+### Solution
+
+- 🔍 Search by: specialty, district, hospital, name
+- 📍 Google Maps chamber location
+- ⏰ Live chamber time, visit fee
+- ⭐ Patient reviews (verified)
+- 🤖 AI search: "Best child doctor in Dhanmondi under 1000 tk"
+
+### Run
+
+```bash
+git clone https://github.com/proffesergio/daktarbari.git
+cd daktarbari
+npm install
+npm run dev
+```
+
+### Stack
+
+- Next.js, TypeScript, Tailwind
+- PostgreSQL + Prisma - doctor data
+- Google Maps API
+- AI search with embeddings (upcoming)
+
+### Data
+
+- 1000+ doctors (seed data for Dhaka)
+- Open for community contributions
+
+### Roadmap
+
+- [ ] AI symptom to doctor matcher
+- [ ] Appointment booking
+- [ ] Emergency doctor finder
+
+<div align="center">
+For patients, by a Bangladeshi developer 🩺🇧🇩
+</div>
+
 
 ## কেন ডাক্তার বাড়ি?
 
