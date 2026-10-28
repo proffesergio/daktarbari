@@ -11,12 +11,8 @@
 [AI Search](https://img.shields.io/badge/AI_Search-EF4444?style=for-the-badge&logo=openai&logoColor=white)
 
 </div>
-
 ---
-
 <div align="center">
-
-# ডাক্তার বাড়ি · Daktarbari
 
 **বাংলাদেশের বাংলা-ফার্স্ট ডাক্তার ডিরেক্টরি — বয়স্ক ও নতুন ইন্টারনেট ব্যবহারকারীদের জন্য সহজ করে বানানো।**
 
